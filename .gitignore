@@ -1,0 +1,4 @@
+*.env
+project_architecture.md
+.tmp.driveupload/
+.tmp.drivedownload/
