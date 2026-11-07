@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -30,11 +29,34 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+func (r *Request) validate() bool {
+	if r.Login == "" || r.Password == "" {
+		return false
+	}
+
+	return true
+}
+
+func decodeJSONToRequest(w http.ResponseWriter, r *http.Request, dst *Request) {
+	if err := json.NewDecoder(r.Body).Decode(&dst); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func decodeJSONToRefreshRequest(w http.ResponseWriter, r *http.Request, dst *RefreshRequest) {
+	if err := json.NewDecoder(r.Body).Decode(&dst); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 func (uh *UserHandler) UserRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	decodeJSONToRequest(w, r, &request)
+
+	if !request.validate() {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -61,9 +83,9 @@ func (uh *UserHandler) UserRegisterHandler(w http.ResponseWriter, r *http.Reques
 
 func (uh *UserHandler) UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
+	decodeJSONToRequest(w, r, &request)
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		fmt.Println(err)
+	if !request.validate() {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -95,11 +117,7 @@ func (uh *UserHandler) UserLoginHandler(w http.ResponseWriter, r *http.Request) 
 
 func (uh *UserHandler) UserRefreshHandler(w http.ResponseWriter, r *http.Request) {
 	var request RefreshRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	decodeJSONToRefreshRequest(w, r, &request)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
