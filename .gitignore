@@ -1,4 +1,5 @@
 *.env
 project_architecture.md
+catalog_architecture.md
 .tmp.driveupload/
 .tmp.drivedownload/
