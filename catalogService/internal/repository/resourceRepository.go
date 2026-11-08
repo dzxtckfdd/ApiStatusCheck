@@ -167,7 +167,7 @@ func (rr *ResourceRepository) GetPublic(ctx context.Context) ([]*model.Resource,
 	return resources, rows.Err()
 }
 
-func (rr *ResourceRepository) GetActiveTargets(ctx context.Context) ([]*model.Resource, error) {
+func (rr *ResourceRepository) GetActiveResources(ctx context.Context) ([]*model.Resource, error) {
 	query := `
 		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
 		FROM resources

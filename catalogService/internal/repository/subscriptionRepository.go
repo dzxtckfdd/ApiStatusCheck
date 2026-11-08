@@ -47,7 +47,7 @@ func (sr *SubscriptionRepository) HasAccess(ctx context.Context, userId, resourc
 	`
 
 	var hasAccess bool
-	
+
 	err := sr.pool.QueryRow(ctx, query, userId, resourceId).Scan(&hasAccess)
 	if err != nil {
 		return false, err

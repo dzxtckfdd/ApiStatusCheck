@@ -46,4 +46,16 @@ func main() {
 	subscriptionRepository := repository.NewSubscriptionRepository(pool)
 
 	resourceService := service.NewResourceService(resourceRepository, subscriptionRepository, metricRepository)
+	internalService := service.NewInternalService(
+		checkRepository,
+		stateRepository,
+		incidenRepository,
+		resourceRepository,
+		subscriptionRepository,
+		cfg.Notifier.NotifierUrl,
+		int(cfg.ApiChecker.OpenThreshold),
+		int(cfg.ApiChecker.CloseThreshold),
+	)
+
+	
 }

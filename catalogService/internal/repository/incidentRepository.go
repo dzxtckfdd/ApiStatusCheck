@@ -41,14 +41,14 @@ func (ir *IncidentRepository) Open(ctx context.Context, resourceId, description 
 	return id, nil
 }
 
-func (ir *IncidentRepository) Resolve(ctx context.Context, resourceId, description string) error {
+func (ir *IncidentRepository) Resolve(ctx context.Context, incidentId string) error {
 	query := `
 		UPDATE incidents
 		SET resolved_at = now()
 		WHERE id = $1
 	`
 
-	tag, err := ir.pool.Exec(ctx, query, resourceId)
+	tag, err := ir.pool.Exec(ctx, query, incidentId)
 	if err != nil {
 		return err
 	}

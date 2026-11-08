@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Postgres PostgresConfig
-	Auth     AuthConfig
-	Notifier NotifierConfig
-	Internal InternalConfig
+	Server     ServerConfig
+	Postgres   PostgresConfig
+	Auth       AuthConfig
+	Notifier   NotifierConfig
+	Internal   InternalConfig
+	ApiChecker ApiCheckerConfig
 }
 
 type ServerConfig struct {
@@ -47,6 +48,11 @@ type InternalConfig struct {
 	SecretKey string
 }
 
+type ApiCheckerConfig struct {
+	OpenThreshold  int32
+	CloseThreshold int32
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load("../.env")
 
@@ -72,6 +78,9 @@ func Load() (*Config, error) {
 	cfg.Notifier.NotifierUrl = getEnv("SERVICE_URL", "http://localhost:8004")
 
 	cfg.Internal.SecretKey = getEnv("SECRET_KEY", "internal-secret")
+
+	cfg.ApiChecker.OpenThreshold = int32(getEnvInt("OPEN_INCIDENT_THRESHOLD", 2))
+	cfg.ApiChecker.CloseThreshold = int32(getEnvInt("CLOSE_INCIDENT_THRESHOLD", 2))
 
 	return cfg, nil
 }
