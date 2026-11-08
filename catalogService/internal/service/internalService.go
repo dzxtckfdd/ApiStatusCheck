@@ -15,6 +15,7 @@ import (
 )
 
 type InternalService struct {
+	httpClient              *http.Client
 	checkRepository         *repository.CheckRepository
 	stateRepository         *repository.StateRepository
 	incidentRepository      *repository.IncidentRepository
@@ -36,6 +37,9 @@ func NewInternalService(
 	closeThreshold int,
 ) *InternalService {
 	return &InternalService{
+		httpClient: &http.Client{
+			Timeout: 5 * time.Second,
+		},
 		checkRepository:         checkRepository,
 		stateRepository:         stateRepository,
 		incidentRepository:      incidentRepository,
@@ -62,6 +66,8 @@ func (is *InternalService) GetActiveResources(ctx context.Context) (*dto.GetReso
 			Name:             t.Name,
 			CheckIntervalSec: t.CheckIntervalSec,
 			IsActive:         t.IsActive,
+			IsUp:             t.IsUp,
+			LastCheckedAt:    t.LastCheckedAt,
 		})
 	}
 
@@ -169,13 +175,27 @@ func (is *InternalService) sendNotification(resourceId, status string) {
 		"resource_url":   res.Url,
 		"status":         status,
 		"subscriber_ids": subscriberIds,
-		"occured_at":     time.Now().UTC(),
+		"occurred_at":    time.Now().UTC(),
 	}
 
 	data, _ := json.Marshal(payload)
 
-	resp, err := http.Post(is.notifierUrl+"/internal/notify", "application/json", bytes.NewBuffer(data))
-	if err == nil {
-		defer resp.Body.Close()
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		is.notifierUrl+"/internal/notify",
+		bytes.NewBuffer(data),
+	)
+	if err != nil {
+		return
 	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := is.httpClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
 }

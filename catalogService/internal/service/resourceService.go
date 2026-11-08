@@ -18,7 +18,6 @@ type ResourceService struct {
 	resourceRepository     *repository.ResourceRepository
 	subscriptionRepository *repository.SubscriptionRepository
 	metricRepository       *repository.MetricRepository
-	stateRepository        *repository.StateRepository
 }
 
 func NewResourceService(
@@ -37,9 +36,12 @@ func ValidateCreateResourceRequest(req *dto.CreateResourceRequest) error {
 	if len(req.Url) == 0 {
 		return ErrInvalidURL
 	}
-	if _, err := url.Parse(req.Url); err != nil {
+
+	u, err := url.ParseRequestURI(req.Url)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 		return ErrInvalidURL
 	}
+
 	if req.CheckIntervalSec <= 0 {
 		req.CheckIntervalSec = 60
 	}
@@ -103,6 +105,8 @@ func (rs *ResourceService) GetResourcesByUserId(ctx context.Context, userId stri
 			Name:             item.Name,
 			CheckIntervalSec: item.CheckIntervalSec,
 			IsActive:         item.IsActive,
+			IsUp:             item.IsUp,
+			LastCheckedAt:    item.LastCheckedAt,
 		})
 	}
 
@@ -124,6 +128,8 @@ func (rs *ResourceService) GetPublicResources(ctx context.Context) (*dto.GetReso
 			Name:             item.Name,
 			CheckIntervalSec: item.CheckIntervalSec,
 			IsActive:         item.IsActive,
+			IsUp:             item.IsUp,
+			LastCheckedAt:    item.LastCheckedAt,
 		})
 	}
 
@@ -137,6 +143,9 @@ func (rs *ResourceService) GetMetricsById(ctx context.Context, req dto.GetMetric
 	}
 
 	if !resource.IsPublic {
+		if userId == "" {
+			return nil, ErrAccessDenied
+		}
 		hasAccess, err := rs.subscriptionRepository.HasAccess(ctx, userId, req.ResourceId)
 		if err != nil {
 			return nil, fmt.Errorf("unable to check access: %w", err)

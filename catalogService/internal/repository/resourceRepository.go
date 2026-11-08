@@ -37,9 +37,13 @@ func (rr *ResourceRepository) Create(ctx context.Context, url, name string, chec
 
 func (rr *ResourceRepository) GetById(ctx context.Context, id string) (*model.Resource, error) {
 	query := `
-		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
-		FROM resources
-		WHERE id = $1
+		SELECT 
+			r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at,
+			COALESCE(rs.is_up, true) AS is_up,
+			rs.last_checked_at
+		FROM resources r
+		LEFT JOIN resource_state rs ON r.id = rs.resource_id
+		WHERE r.id = $1
 	`
 
 	var r model.Resource
@@ -52,6 +56,8 @@ func (rr *ResourceRepository) GetById(ctx context.Context, id string) (*model.Re
 		&r.IsActive,
 		&r.IsPublic,
 		&r.CreatedAt,
+		&r.IsUp,
+		&r.LastCheckedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -65,9 +71,13 @@ func (rr *ResourceRepository) GetById(ctx context.Context, id string) (*model.Re
 
 func (rr *ResourceRepository) GetByUrl(ctx context.Context, url string) (*model.Resource, error) {
 	query := `
-		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
-		FROM resources
-		WHERE url = $1
+		SELECT 
+			r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at,
+			COALESCE(rs.is_up, true) AS is_up,
+			rs.last_checked_at
+		FROM resources r
+		LEFT JOIN resource_state rs ON r.id = rs.resource_id
+		WHERE r.url = $1
 		LIMIT 1
 	`
 
@@ -81,6 +91,8 @@ func (rr *ResourceRepository) GetByUrl(ctx context.Context, url string) (*model.
 		&r.IsActive,
 		&r.IsPublic,
 		&r.CreatedAt,
+		&r.IsUp,
+		&r.LastCheckedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -94,9 +106,13 @@ func (rr *ResourceRepository) GetByUrl(ctx context.Context, url string) (*model.
 
 func (rr *ResourceRepository) GetByUserId(ctx context.Context, userId string) ([]*model.Resource, error) {
 	query := `
-		SELECT r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at
+		SELECT 
+			r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at,
+			COALESCE(rs.is_up, true) AS is_up,
+			rs.last_checked_at
 		FROM resources r
 		INNER JOIN subscriptions s ON r.id = s.resource_id
+		LEFT JOIN resource_state rs ON r.id = rs.resource_id
 		WHERE s.user_id = $1
 		ORDER BY r.created_at DESC
 	`
@@ -120,6 +136,8 @@ func (rr *ResourceRepository) GetByUserId(ctx context.Context, userId string) ([
 			&r.IsActive,
 			&r.IsPublic,
 			&r.CreatedAt,
+			&r.IsUp,
+			&r.LastCheckedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -132,10 +150,14 @@ func (rr *ResourceRepository) GetByUserId(ctx context.Context, userId string) ([
 
 func (rr *ResourceRepository) GetPublic(ctx context.Context) ([]*model.Resource, error) {
 	query := `
-		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
-		FROM resources
-		WHERE is_public = true AND is_active = true
-		ORDER BY name ASC
+		SELECT 
+			r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at,
+			COALESCE(rs.is_up, true) AS is_up,
+			rs.last_checked_at
+		FROM resources r
+		LEFT JOIN resource_state rs ON r.id = rs.resource_id
+		WHERE r.is_public = true AND r.is_active = true
+		ORDER BY r.name ASC
 	`
 
 	rows, err := rr.pool.Query(ctx, query)
@@ -157,6 +179,8 @@ func (rr *ResourceRepository) GetPublic(ctx context.Context) ([]*model.Resource,
 			&r.IsActive,
 			&r.IsPublic,
 			&r.CreatedAt,
+			&r.IsUp,
+			&r.LastCheckedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -169,9 +193,13 @@ func (rr *ResourceRepository) GetPublic(ctx context.Context) ([]*model.Resource,
 
 func (rr *ResourceRepository) GetActiveResources(ctx context.Context) ([]*model.Resource, error) {
 	query := `
-		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
-		FROM resources
-		WHERE is_active = true
+		SELECT 
+			r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at,
+			COALESCE(rs.is_up, true) AS is_up,
+			rs.last_checked_at
+		FROM resources r
+		LEFT JOIN resource_state rs ON r.id = rs.resource_id
+		WHERE r.is_active = true
 	`
 
 	rows, err := rr.pool.Query(ctx, query)
@@ -193,6 +221,8 @@ func (rr *ResourceRepository) GetActiveResources(ctx context.Context) ([]*model.
 			&r.IsActive,
 			&r.IsPublic,
 			&r.CreatedAt,
+			&r.IsUp,
+			&r.LastCheckedAt,
 		); err != nil {
 			return nil, err
 		}

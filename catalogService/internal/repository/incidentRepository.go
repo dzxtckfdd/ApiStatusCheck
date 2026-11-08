@@ -32,7 +32,7 @@ func (ir *IncidentRepository) Open(ctx context.Context, resourceId, description 
 	err := ir.pool.QueryRow(ctx, query, resourceId, description).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
 			return "", ErrResourceNotFound
 		}
 		return "", err

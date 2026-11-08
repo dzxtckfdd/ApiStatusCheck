@@ -2,9 +2,13 @@ package main
 
 import (
 	"catalogService/internal/config"
+	"catalogService/internal/handlers"
+	"catalogService/internal/middleware"
 	"catalogService/internal/postgres"
 	"catalogService/internal/repository"
 	"catalogService/internal/service"
+	"errors"
+	"net/http"
 
 	"context"
 
@@ -57,5 +61,32 @@ func main() {
 		int(cfg.ApiChecker.CloseThreshold),
 	)
 
-	
+	clientHandler := handlers.NewClientHandler(resourceService)
+	internalHandler := handlers.NewInternalHandler(internalService, cfg.Internal.SecretKey)
+
+	authMw := middleware.AuthMiddleware(cfg.Auth.JWTSecret)
+	optionalAuthMw := middleware.OptionalAuthMiddleware(cfg.Auth.JWTSecret)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /api/v1/resources/public", clientHandler.GetPublicResources)
+	mux.Handle("POST /api/v1/resources/metrics", optionalAuthMw(http.HandlerFunc(clientHandler.GetMetrics)))
+
+	mux.Handle("POST /api/v1/resources", authMw(http.HandlerFunc(clientHandler.CreateResource)))
+	mux.Handle("GET /api/v1/resources", authMw(http.HandlerFunc(clientHandler.GetUserResources)))
+
+	mux.HandleFunc("GET /internal/resources", internalHandler.GetActiveTargets)
+	mux.HandleFunc("POST /internal/checks", internalHandler.ProcessBatch)
+
+	server := &http.Server{
+		Addr:         cfg.Server.Port,
+		Handler:      mux,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+	}
+
+	log.Printf("catalogService started on port %s", cfg.Server.Port)
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("server listen error: %v", err)
+	}
 }
