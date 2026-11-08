@@ -63,6 +63,35 @@ func (rr *ResourceRepository) GetById(ctx context.Context, id string) (*model.Re
 	return &r, nil
 }
 
+func (rr *ResourceRepository) GetByUrl(ctx context.Context, url string) (*model.Resource, error) {
+	query := `
+		SELECT id, url, name, check_interval_sec, is_active, is_public, created_at
+		FROM resources
+		WHERE url = $1
+		LIMIT 1
+	`
+
+	var r model.Resource
+
+	err := rr.pool.QueryRow(ctx, query, url).Scan(
+		&r.Id,
+		&r.Url,
+		&r.Name,
+		&r.CheckIntervalSec,
+		&r.IsActive,
+		&r.IsPublic,
+		&r.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+
+	return &r, nil
+}
+
 func (rr *ResourceRepository) GetByUserId(ctx context.Context, userId string) ([]*model.Resource, error) {
 	query := `
 		SELECT r.id, r.url, r.name, r.check_interval_sec, r.is_active, r.is_public, r.created_at

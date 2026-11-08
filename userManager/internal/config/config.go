@@ -65,7 +65,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("JWT_SECRET is required environment variable")
 	}
 	cfg.JWT.AccessTokenTTL = getEnvDuration("JWT_ACCESS_TTL", 15*time.Minute)
-	cfg.JWT.RefreshTokenTTL = getEnvDuration("JWT_REFRESH_TTL", 30*24*time.Hour) // 30 дней
+	cfg.JWT.RefreshTokenTTL = getEnvDuration("JWT_REFRESH_TTL", 30*24*time.Hour)
 	return cfg, nil
 }
 
