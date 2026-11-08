@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -57,6 +58,9 @@ func (ur *UserRepository) GetByLogin(ctx context.Context, login string) (*User, 
 
 	err := ur.pool.QueryRow(ctx, query, login).Scan(&user.Id, &user.Login, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
 		return nil, err
 	}
 

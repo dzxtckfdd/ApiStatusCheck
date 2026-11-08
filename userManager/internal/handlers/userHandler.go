@@ -37,23 +37,28 @@ func (r *Request) validate() bool {
 	return true
 }
 
-func decodeJSONToRequest(w http.ResponseWriter, r *http.Request, dst *Request) {
-	if err := json.NewDecoder(r.Body).Decode(&dst); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+func (r *RefreshRequest) validate() bool {
+	return r.RefreshToken != ""
 }
 
-func decodeJSONToRefreshRequest(w http.ResponseWriter, r *http.Request, dst *RefreshRequest) {
-	if err := json.NewDecoder(r.Body).Decode(&dst); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return err
 	}
+	return nil
 }
 
 func (uh *UserHandler) UserRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
-	decodeJSONToRequest(w, r, &request)
+
+	if err := decodeJSON(w, r, &request); err != nil {
+		return
+	}
+	if !request.validate() {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	if !request.validate() {
 		w.WriteHeader(http.StatusBadRequest)
@@ -83,7 +88,14 @@ func (uh *UserHandler) UserRegisterHandler(w http.ResponseWriter, r *http.Reques
 
 func (uh *UserHandler) UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
-	decodeJSONToRequest(w, r, &request)
+
+	if err := decodeJSON(w, r, &request); err != nil {
+		return
+	}
+	if !request.validate() {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	if !request.validate() {
 		w.WriteHeader(http.StatusBadRequest)
@@ -117,7 +129,14 @@ func (uh *UserHandler) UserLoginHandler(w http.ResponseWriter, r *http.Request) 
 
 func (uh *UserHandler) UserRefreshHandler(w http.ResponseWriter, r *http.Request) {
 	var request RefreshRequest
-	decodeJSONToRefreshRequest(w, r, &request)
+
+	if err := decodeJSON(w, r, &request); err != nil {
+		return
+	}
+	if !request.validate() {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()

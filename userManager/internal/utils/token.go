@@ -12,7 +12,7 @@ import (
 func GenerateAccessToken(userId string, secret string, ttl time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"id":  userId,
-		"exp": time.Now().Add(ttl),
+		"exp": time.Now().Add(ttl).Unix(),
 		"iat": time.Now().Unix(),
 	}
 

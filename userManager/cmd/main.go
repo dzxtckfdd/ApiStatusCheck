@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 
@@ -45,9 +46,22 @@ func main() {
 	userService := service.NewUserService(userRepository, refreshTokenRepository, cfg.JWT.SecretKey, cfg.JWT.AccessTokenTTL, cfg.JWT.RefreshTokenTTL)
 	userHandler := handlers.NewUserHandler(userService)
 
-	http.HandleFunc("/auth/register", userHandler.UserRegisterHandler)
-	http.HandleFunc("/auth/login", userHandler.UserLoginHandler)
-	http.HandleFunc("/auth/refresh", userHandler.UserRefreshHandler)
+	mux := http.NewServeMux()
 
-	http.ListenAndServe(cfg.Server.Port, nil)
+	mux.HandleFunc("POST /auth/register", userHandler.UserRegisterHandler)
+	mux.HandleFunc("POST /auth/login", userHandler.UserLoginHandler)
+	mux.HandleFunc("POST /auth/refresh", userHandler.UserRefreshHandler)
+
+	server := &http.Server{
+		Addr:         cfg.Server.Port,
+		Handler:      mux,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+	}
+
+	log.Printf("userManager started on port %s", cfg.Server.Port)
+
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("server error: %v", err)
+	}
 }

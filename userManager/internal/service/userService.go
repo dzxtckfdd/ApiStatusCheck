@@ -57,7 +57,10 @@ func (us *UserService) Create(ctx context.Context, userDto dto.UserDto) error {
 func (us *UserService) Login(ctx context.Context, userDto dto.UserDto) (*dto.AuthResponse, error) {
 	user, err := us.userRepository.GetByLogin(ctx, userDto.Login)
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("unable to get user: %w", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userDto.Password))

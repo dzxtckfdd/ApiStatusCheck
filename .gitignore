@@ -1,5 +1,6 @@
 *.env
 project_architecture.md
 catalog_architecture.md
+CODE_REVIEW_AND_CORRECTIONS.md
 .tmp.driveupload/
 .tmp.drivedownload/
