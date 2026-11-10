@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type ResourcesResponce []CheckItem
+type ResourcesResponce []ResourceItem
 
 type ResourceItem struct {
 	Id               string     `json:"id"`

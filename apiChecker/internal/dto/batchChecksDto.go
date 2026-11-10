@@ -13,6 +13,6 @@ type CheckItem struct {
 	ErrorMsg   *string   `json:"error_msg"`
 }
 
-type SaveBatchResponce struct {
+type SaveBatchRequest struct {
 	Results []CheckItem `json:"results"`
 }

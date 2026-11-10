@@ -26,7 +26,7 @@ type InternalConfig struct {
 
 type CatalogConfig struct {
 	CatalogUrl string
-	Interval   int
+	Interval   time.Duration
 }
 
 type WorkerPoolConfig struct {
@@ -34,7 +34,7 @@ type WorkerPoolConfig struct {
 }
 
 type HttpTimeoutConfig struct {
-	HttpTimeout int
+	HttpTimeout time.Duration
 }
 
 func Load() (*Config, error) {
@@ -47,11 +47,11 @@ func Load() (*Config, error) {
 	cfg.Internal.SecretKey = getEnv("SECRET_KEY", "internal-secret")
 
 	cfg.Catalog.CatalogUrl = getEnv("SERVICE_URL", "http://localhost:8002")
-	cfg.Catalog.Interval = getEnvInt("INTERVAL", 5)
+	cfg.Catalog.Interval = getEnvDuration("INTERVAL", 5)
 
 	cfg.WorkerPool.MaxWorkers = getEnvInt("MAX_WORKERS", 20)
 
-	cfg.HttpTimeout.HttpTimeout = getEnvInt("HTTP_TIMEOUT", 10)
+	cfg.HttpTimeout.HttpTimeout = getEnvDuration("HTTP_TIMEOUT", 10)
 
 	return cfg, nil
 }
