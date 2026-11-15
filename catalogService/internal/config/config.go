@@ -54,7 +54,7 @@ type ApiCheckerConfig struct {
 }
 
 func Load() (*Config, error) {
-	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env", "../.env")
 
 	cfg := &Config{}
 
