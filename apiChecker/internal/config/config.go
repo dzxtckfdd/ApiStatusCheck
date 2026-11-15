@@ -47,11 +47,11 @@ func Load() (*Config, error) {
 	cfg.Internal.SecretKey = getEnv("SECRET_KEY", "internal-secret")
 
 	cfg.Catalog.CatalogUrl = getEnv("SERVICE_URL", "http://localhost:8002")
-	cfg.Catalog.Interval = getEnvDuration("INTERVAL", 5)
+	cfg.Catalog.Interval = getEnvDuration("INTERVAL", 1*time.Minute)
 
 	cfg.WorkerPool.MaxWorkers = getEnvInt("MAX_WORKERS", 20)
 
-	cfg.HttpTimeout.HttpTimeout = getEnvDuration("HTTP_TIMEOUT", 10)
+	cfg.HttpTimeout.HttpTimeout = getEnvDuration("HTTP_TIMEOUT", 10*time.Second)
 
 	return cfg, nil
 }

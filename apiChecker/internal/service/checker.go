@@ -60,7 +60,7 @@ func (c *Checker) Check(ctx context.Context, res dto.ResourceItem) *dto.CheckIte
 	}
 	defer resp.Body.Close()
 
-	_, _ = io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
 
 	isUp := resp.StatusCode >= 200 && resp.StatusCode < 400
 

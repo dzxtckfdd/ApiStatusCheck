@@ -39,11 +39,7 @@ func (cc *CatalogClient) GetActiveResources(ctx context.Context) (*dto.Resources
 
 	req.Header.Set("X-Internal-Secret", cc.secretKey)
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := cc.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to request catalog service: %w", err)
 	}
